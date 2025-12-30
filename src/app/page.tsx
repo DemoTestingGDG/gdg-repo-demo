@@ -1,13 +1,45 @@
+"use client";
+
 import Link from "next/link";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/client";
+import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 
-export default async function LandingPage() {
-  const supabase = await createClient();
+export default function LandingPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch User Session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Check initial session
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    checkUser();
+
+    // Listen for auth changes in real-time
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white">
+        <div className="text-lg text-gray-600">Loading...</div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-white text-black">
@@ -21,17 +53,17 @@ export default async function LandingPage() {
 
         <div className="flex gap-4 justify-center pt-4">
           {user ? (
-            <>
+            <div className="flex flex-col items-center gap-4">
               <Link
                 href="/dashboard"
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
               >
                 Go to Dashboard
               </Link>
-              <p className="block w-full text-sm text-gray-500 mt-2">
-                Logged in as: {user.email}
+              <p className="text-sm text-gray-500">
+                Logged in as: <span className="font-medium">{user.email}</span>
               </p>
-            </>
+            </div>
           ) : (
             <>
               <Link
