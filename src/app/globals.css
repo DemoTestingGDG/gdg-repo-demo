@@ -123,3 +123,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Sonner Toast Text Styling - Make text readable */
+[data-sonner-toast] [data-title] {
+  color: #000000 !important;
+  font-weight: 600 !important;
+}
+
+[data-sonner-toast] [data-description] {
+  color: #1f2937 !important;
+}
