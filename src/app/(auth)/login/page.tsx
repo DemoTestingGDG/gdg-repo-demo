@@ -30,14 +30,29 @@ export default function LoginPage() {
   }, [message, error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-lg">
         <div>
-          <h2 className="text-center text-3xl font-bold">
-            Sign in to your account
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-600">
+            <svg
+              className="h-6 w-6 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          <h2 className="mt-4 text-center text-3xl font-bold">
+            Sign in to FETCH
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Welcome back! Please enter your details.
+            PUP Lost and Found System
           </p>
         </div>
 
@@ -99,15 +114,20 @@ export default function LoginPage() {
           <SubmitButton text="Sign in" />
         </form>
 
-        <p className="text-center text-sm text-gray-600">
-          Don't have an account?{" "}
-          <Link
-            href="/signup"
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
-            Sign up
-          </Link>
-        </p>
+        <div className="space-y-4">
+          <p className="text-center text-sm text-gray-600">
+            Don't have an account?{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              Sign up as Student
+            </Link>
+          </p>
+          <p className="text-center text-xs text-gray-500">
+            Security personnel? Contact your administrator for access.
+          </p>
+        </div>
       </div>
     </div>
   );

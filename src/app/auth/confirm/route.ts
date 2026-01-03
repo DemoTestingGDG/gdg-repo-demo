@@ -17,29 +17,34 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
+      // Email confirmed successfully
       return NextResponse.redirect(
         new URL(
-          `${next}?confirmed=true&message=${encodeURIComponent(
-            "Email confirmed successfully! Welcome aboard."
+          `/dashboard?confirmed=true&message=${encodeURIComponent(
+            "Email confirmed successfully! Welcome to FETCH."
           )}`,
           request.url
         )
       );
     }
 
+    // Email confirmation failed
     return NextResponse.redirect(
       new URL(
         `/login?error=${encodeURIComponent(
-          "Email confirmation failed. Please try again or request a new confirmation email."
+          "Email confirmation failed. The link may be expired. Please request a new confirmation email."
         )}`,
         request.url
       )
     );
   }
 
+  // Invalid confirmation link
   return NextResponse.redirect(
     new URL(
-      `/login?error=${encodeURIComponent("Invalid confirmation link.")}`,
+      `/login?error=${encodeURIComponent(
+        "Invalid confirmation link. Please check your email for the correct link."
+      )}`,
       request.url
     )
   );
