@@ -1,6 +1,6 @@
 "use client";
 
-import { signupStudent } from "../actions";
+import { signup } from "../actions";
 import { SubmitButton } from "@/components/auth/submit-button";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -27,10 +27,10 @@ export default function SignupPage() {
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-lg">
         <div>
           <h2 className="text-center text-3xl font-bold">
-            Create FETCH Account
+            Create Your Account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Polytechnic University of the Philippines
+            Polytechnic University of the Philippines - Lost & Found System
           </p>
         </div>
 
@@ -42,59 +42,7 @@ export default function SignupPage() {
           </Alert>
         )}
 
-        <form className="space-y-6" action={signupStudent}>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="firstName"
-                className="block text-sm font-medium text-gray-700"
-              >
-                First Name
-              </label>
-              <input
-                id="firstName"
-                name="firstName"
-                type="text"
-                required
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Juan"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="lastName"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Last Name
-              </label>
-              <input
-                id="lastName"
-                name="lastName"
-                type="text"
-                required
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Dela Cruz"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="studentNumber"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Student Number
-            </label>
-            <input
-              id="studentNumber"
-              name="studentNumber"
-              type="text"
-              required
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="2021-12345-MN-0"
-            />
-          </div>
-
+        <form className="space-y-6" action={signup}>
           <div>
             <label
               htmlFor="email"
@@ -109,28 +57,11 @@ export default function SignupPage() {
               autoComplete="email"
               required
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="your.email@gmail.com"
+              placeholder="your.email@example.com"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Use your personal email
+              Use your personal or institutional email
             </p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="phone"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Phone Number
-            </label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              required
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="+639123456789"
-            />
           </div>
 
           <div>
@@ -155,7 +86,14 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <SubmitButton text="Create Student Account" />
+          <div className="rounded-md bg-blue-50 p-4">
+            <p className="text-sm text-blue-700">
+              After signing up, you'll complete your profile with additional
+              details like your name, student number, and contact information.
+            </p>
+          </div>
+
+          <SubmitButton text="Create Account" />
         </form>
 
         <p className="text-center text-sm text-gray-600">
