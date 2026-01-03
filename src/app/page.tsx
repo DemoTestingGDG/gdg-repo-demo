@@ -45,10 +45,10 @@ export default function LandingPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-white text-black">
       <div className="max-w-2xl text-center space-y-6">
         <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl">
-          Build the Future in 2026
+          Fetch
         </h1>
         <p className="text-lg text-gray-600">
-          A secure, high-performance starter using Next.js 16 and Supabase.
+          Preview build to test for the authentication. Backend functionality only.
         </p>
 
         <div className="flex gap-4 justify-center pt-4">
