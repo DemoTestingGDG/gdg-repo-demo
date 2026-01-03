@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { logout } from "../(auth)/actions";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, LogOut, User } from "lucide-react";
@@ -25,10 +25,9 @@ interface UserProfile {
   onboardingCompleted: boolean;
   studentId?: number;
   securityId?: number;
-  adminId?: number;
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -50,7 +49,6 @@ export default function DashboardPage() {
         return;
       }
 
-      // Fetch profile from profiles table
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("*")
@@ -63,7 +61,6 @@ export default function DashboardPage() {
         return;
       }
 
-      // Redirect to onboarding if not completed
       if (!profile.onboarding_completed) {
         router.push("/onboarding");
         return;
@@ -82,7 +79,6 @@ export default function DashboardPage() {
         onboardingCompleted: profile.onboarding_completed,
       };
 
-      // Get student or security ID from legacy tables if needed
       if (profile.user_type === "student") {
         const { data: student } = await supabase
           .from("student")
@@ -98,8 +94,6 @@ export default function DashboardPage() {
           .single();
         userProfile.securityId = security?.security_id;
       }
-      // Admin ID will be manually set in profiles table by developers
-      // No need to fetch from another table
 
       setUser(userProfile);
       setLoading(false);
@@ -227,5 +221,19 @@ export default function DashboardPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gray-50">
+          <div className="text-lg text-gray-600">Loading...</div>
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }
