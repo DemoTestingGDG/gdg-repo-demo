@@ -6,20 +6,26 @@ import { logout } from "../(auth)/actions";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, LogOut } from "lucide-react";
+import { CheckCircle2, LogOut, User } from "lucide-react";
 import { StudentHome } from "@/components/home/student-home";
 import { SecurityHome } from "@/components/home/security-home";
 import { AdminHome } from "@/components/home/admin-home";
-import type { UserRole } from "@/utils/supabase/get-user-role";
+import Link from "next/link";
 
 interface UserProfile {
   id: string;
   email: string;
-  role: UserRole;
+  userType: "student" | "security" | "admin";
   firstName?: string;
   lastName?: string;
+  phone?: string;
+  studentNumber?: string;
+  employeeId?: string;
+  department?: string;
+  onboardingCompleted: boolean;
   studentId?: number;
   securityId?: number;
+  adminId?: number;
 }
 
 export default function DashboardPage() {
@@ -44,31 +50,56 @@ export default function DashboardPage() {
         return;
       }
 
-      const role = (authUser.user_metadata?.role as UserRole) || "student";
+      // Fetch profile from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", authUser.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error("Profile error:", profileError);
+        router.push("/onboarding");
+        return;
+      }
+
+      // Redirect to onboarding if not completed
+      if (!profile.onboarding_completed) {
+        router.push("/onboarding");
+        return;
+      }
+
       const userProfile: UserProfile = {
         id: authUser.id,
         email: authUser.email || "",
-        role: role,
-        firstName: authUser.user_metadata?.first_name,
-        lastName: authUser.user_metadata?.last_name,
+        userType: profile.user_type,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        phone: profile.phone,
+        studentNumber: profile.student_number,
+        employeeId: profile.employee_id,
+        department: profile.department,
+        onboardingCompleted: profile.onboarding_completed,
       };
 
-      // Get student or security ID from database
-      if (role === "student") {
+      // Get student or security ID from legacy tables if needed
+      if (profile.user_type === "student") {
         const { data: student } = await supabase
-          .from("Student")
+          .from("student")
           .select("student_id")
           .eq("email", authUser.email)
           .single();
         userProfile.studentId = student?.student_id;
-      } else if (role === "security") {
+      } else if (profile.user_type === "security") {
         const { data: security } = await supabase
-          .from("SecurityPersonnel")
+          .from("securitypersonnel")
           .select("security_id")
           .eq("email", authUser.email)
           .single();
         userProfile.securityId = security?.security_id;
       }
+      // Admin ID will be manually set in profiles table by developers
+      // No need to fetch from another table
 
       setUser(userProfile);
       setLoading(false);
@@ -115,26 +146,50 @@ export default function DashboardPage() {
     return null;
   }
 
+  const getUserTypeLabel = (type: string) => {
+    switch (type) {
+      case "student":
+        return "Student";
+      case "security":
+        return "Security Personnel";
+      case "admin":
+        return "Administrator";
+      default:
+        return type;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="border-b border-gray-200 bg-white">
+      <nav className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-bold text-gray-900">FETCH</h1>
               <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-                {user.role}
+                {getUserTypeLabel(user.userType)}
               </span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{user.email}</span>
+              {user.userType !== "admin" && (
+                <Link
+                  href="/profile"
+                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">Profile</span>
+                </Link>
+              )}
+              <span className="hidden text-sm text-gray-600 sm:block">
+                {user.firstName} {user.lastName}
+              </span>
               <form action={logout}>
                 <button
                   type="submit"
                   className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign out
+                  <span className="hidden sm:inline">Sign out</span>
                 </button>
               </form>
             </div>
@@ -153,21 +208,23 @@ export default function DashboardPage() {
           </Alert>
         )}
 
-        {user.role === "student" && user.studentId && (
+        {user.userType === "student" && (
           <StudentHome
-            studentId={user.studentId}
+            studentId={user.studentId || 0}
             firstName={user.firstName}
             email={user.email}
           />
         )}
-        {user.role === "security" && user.securityId && (
+        {user.userType === "security" && (
           <SecurityHome
-            securityId={user.securityId}
+            securityId={user.securityId || 0}
             firstName={user.firstName}
             email={user.email}
           />
         )}
-        {user.role === "admin" && <AdminHome email={user.email} />}
+        {user.userType === "admin" && (
+          <AdminHome firstName={user.firstName} email={user.email} />
+        )}
       </main>
     </div>
   );

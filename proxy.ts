@@ -23,13 +23,46 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Essential: Refresh session and get user info
+  // Refresh session and get user info
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Guard protected routes (e.g., anything in /dashboard)
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  // If user is authenticated, check onboarding status
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .single();
+
+    // Redirect to onboarding if not completed (except if already on onboarding page or auth pages)
+    if (
+      profile &&
+      !profile.onboarding_completed &&
+      !request.nextUrl.pathname.startsWith("/onboarding") &&
+      !request.nextUrl.pathname.startsWith("/auth")
+    ) {
+      return NextResponse.redirect(new URL("/onboarding", request.url));
+    }
+
+    // Redirect to dashboard if trying to access onboarding but already completed
+    if (
+      profile &&
+      profile.onboarding_completed &&
+      request.nextUrl.pathname.startsWith("/onboarding")
+    ) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
+  // Guard protected routes (e.g., anything in /dashboard, /profile, /onboarding)
+  if (
+    !user &&
+    (request.nextUrl.pathname.startsWith("/dashboard") ||
+      request.nextUrl.pathname.startsWith("/profile") ||
+      request.nextUrl.pathname.startsWith("/onboarding"))
+  ) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
