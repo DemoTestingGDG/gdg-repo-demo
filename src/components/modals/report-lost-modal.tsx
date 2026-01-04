@@ -39,13 +39,15 @@ const CATEGORIES = [
 interface ReportLostModalProps {
   studentId: number;
   onSuccess?: () => void;
+  onClose?: () => void;
 }
 
 export function ReportLostModal({
   studentId,
   onSuccess,
+  onClose,
 }: ReportLostModalProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(onClose ? true : false);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -129,6 +131,7 @@ export function ReportLostModal({
       setImageFile(null);
       setImagePreview(null);
       setOpen(false);
+      if (onClose) onClose();
       onSuccess?.();
     } catch (error: any) {
       toast.error("Error", {
@@ -141,13 +144,20 @@ export function ReportLostModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="w-full" size="lg">
-          <PlusCircle className="mr-2 h-5 w-5" />
-          Report Lost Item
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen && onClose) {
+        onClose();
+      }
+    }}>
+      {!onClose && (
+        <DialogTrigger asChild>
+          <Button className="w-full" size="lg">
+            <PlusCircle className="mr-2 h-5 w-5" />
+            Report Lost Item
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Report Lost Item</DialogTitle>
@@ -277,7 +287,10 @@ export function ReportLostModal({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                if (onClose) onClose();
+              }}
             >
               Cancel
             </Button>
