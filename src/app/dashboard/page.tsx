@@ -165,6 +165,9 @@ function DashboardContent() {
               </span>
             </div>
             <div className="flex items-center gap-4">
+              <span className="hidden text-sm text-gray-600 sm:block">
+                {user.firstName} {user.lastName}
+              </span>
               {user.userType !== "admin" && (
                 <Link
                   href="/profile"
@@ -174,9 +177,6 @@ function DashboardContent() {
                   <span className="hidden sm:inline">Profile</span>
                 </Link>
               )}
-              <span className="hidden text-sm text-gray-600 sm:block">
-                {user.firstName} {user.lastName}
-              </span>
               <form action={logout}>
                 <button
                   type="submit"

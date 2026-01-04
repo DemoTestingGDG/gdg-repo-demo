@@ -100,14 +100,18 @@ export function StudentHome({ studentId, firstName, email }: HomeProps) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-fetch-red flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="currentColor">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              <svg
+                viewBox="0 0 24 24"
+                className="w-6 h-6 text-white"
+                fill="currentColor"
+              >
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
               </svg>
             </div>
           </div>
           <Bell className="w-6 h-6 text-fetch-red" />
         </div>
-        
+
         <h1 className="text-2xl font-bold text-gray-900">
           Welcome back, {firstName || "Student"}!
         </h1>
@@ -139,8 +143,13 @@ export function StudentHome({ studentId, firstName, email }: HomeProps) {
       {/* Browse Section */}
       <div className="px-4 mt-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Browse Item Matches</h2>
-          <Link href="/matches" className="text-sm text-gray-600 hover:text-fetch-red">
+          <h2 className="text-lg font-bold text-gray-900">
+            Browse Item Matches
+          </h2>
+          <Link
+            href="/matches"
+            className="text-sm text-gray-600 hover:text-fetch-red"
+          >
             See more
           </Link>
         </div>
@@ -168,31 +177,44 @@ export function StudentHome({ studentId, firstName, email }: HomeProps) {
           </div>
         ) : (
           <div className="text-center py-12 text-gray-500">
-            {searchQuery ? "No items match your search" : "No lost items reported yet"}
+            {searchQuery
+              ? "No items match your search"
+              : "No lost items reported yet"}
           </div>
         )}
       </div>
 
       {/* Bottom Navigation Dock */}
       <div className="fixed bottom-4 left-0 right-0 z-40 flex justify-center">
-        <Dock direction="middle" iconSize={48} iconMagnification={64} iconDistance={120}>
+        <Dock
+          direction="middle"
+          iconSize={48}
+          iconMagnification={64}
+          iconDistance={120}
+        >
           <DockIcon>
-            <Link href="/dashboard" className="flex items-center justify-center text-fetch-red">
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-center text-fetch-red"
+            >
               <Home className="w-6 h-6" />
             </Link>
           </DockIcon>
-          
+
           <DockIcon className="bg-fetch-red hover:bg-fetch-red/90">
-            <button
+            <button 
               onClick={() => setIsModalOpen(true)}
               className="flex items-center justify-center text-white"
             >
               <Plus className="w-7 h-7" />
             </button>
           </DockIcon>
-          
+
           <DockIcon>
-            <Link href="/profile" className="flex items-center justify-center text-gray-600 hover:text-fetch-red transition-colors">
+            <Link
+              href="/profile"
+              className="flex items-center justify-center text-gray-600 hover:text-fetch-red transition-colors"
+            >
               <User className="w-6 h-6" />
             </Link>
           </DockIcon>
@@ -201,7 +223,10 @@ export function StudentHome({ studentId, firstName, email }: HomeProps) {
 
       {/* Report Lost Modal */}
       {isModalOpen && (
-        <ReportLostModal studentId={studentId} onClose={() => setIsModalOpen(false)} />
+        <ReportLostModal
+          studentId={studentId}
+          onClose={() => setIsModalOpen(false)}
+        />
       )}
     </div>
   );
@@ -234,9 +259,11 @@ function ItemCard({ item }: { item: LostItemReport }) {
             <span className="text-gray-400 text-sm">No Image</span>
           </div>
         )}
-        
+
         <div className="p-4">
-          <h3 className="font-semibold text-sm text-gray-900 mb-1">{item.item_name}</h3>
+          <h3 className="font-semibold text-sm text-gray-900 mb-1">
+            {item.item_name}
+          </h3>
           <p className="text-xs text-gray-600 mb-2 line-clamp-2">
             {item.description || "No description available"}
           </p>
