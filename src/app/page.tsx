@@ -10,60 +10,62 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { cn } from "@/lib/utils";
+import { Star } from "lucide-react";
 
-const testimonials = [
+interface Testimonial {
+  name: string;
+  role: string;
+  body: string;
+  rating: number;
+  avatar: string;
+}
+
+const defaultTestimonials: Testimonial[] = [
   {
     name: "Rhandie J. Sales Jr.",
     role: "Student",
     body: "Lost my laptop in the library and found it within hours. The notification system is incredible!",
+    rating: 5,
     avatar: "/pages/testimony/rhandie.jpg",
   },
   {
     name: "Akisha Lei de Castro",
     role: "Student",
     body: "This system has revolutionized how we handle lost items. Everything is organized and trackable.",
+    rating: 5,
     avatar: "/pages/testimony/akisha.jpg",
   },
   {
     name: "Donna Reymatias",
     role: "Student",
     body: "Found someone's wallet and returned it the same day. Such a helpful platform!",
+    rating: 5,
     avatar: "/pages/testimony/donna.jpg",
   },
   {
     name: "Kerby Correa",
     role: "Student",
     body: "The verification process is secure and efficient. I trust this system completely.",
+    rating: 5,
     avatar: "https://avatar.vercel.sh/david",
   },
   {
     name: "Nicholas Jose",
     role: "Student",
     body: "Lost my keys during finals week. Fetch saved me from a stressful situation!",
+    rating: 5,
     avatar: "/pages/testimony/nicholas.jpg",
   },
   {
     name: "Samantha Paquibot",
     role: "Student",
     body: "Lost my phone in the lagoon and found it within hours. This is nice.",
+    rating: 5,
     avatar: "https://avatar.vercel.sh/alex",
   },
 ];
 
-const firstRow = testimonials.slice(0, Math.ceil(testimonials.length / 2));
-const secondRow = testimonials.slice(Math.ceil(testimonials.length / 2));
-
-const TestimonialCard = ({
-  name,
-  role,
-  body,
-  avatar,
-}: {
-  name: string;
-  role: string;
-  body: string;
-  avatar: string;
-}) => {
+const TestimonialCard = ({ name, role, body, rating, avatar }: Testimonial) => {
   return (
     <figure
       className={cn(
@@ -74,17 +76,28 @@ const TestimonialCard = ({
     >
       <div className="flex flex-row items-center gap-3">
         <img
-          className="rounded-full"
+          className="rounded-full object-cover"
           width="48"
           height="48"
           alt={name}
           src={avatar}
         />
-        <div className="flex flex-col">
+        <div className="flex flex-col flex-1">
           <figcaption className="text-sm font-medium dark:text-white">
             {name}
           </figcaption>
           <p className="text-xs font-medium text-muted-foreground">{role}</p>
+        </div>
+        <div className="flex gap-0.5">
+          {[...Array(5)].map((_, i) => (
+            <Star
+              key={i}
+              className={cn(
+                "h-3 w-3",
+                i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+              )}
+            />
+          ))}
         </div>
       </div>
       <blockquote className="mt-3 text-sm text-muted-foreground">
@@ -97,6 +110,8 @@ const TestimonialCard = ({
 export default function LandingPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [testimonials, setTestimonials] =
+    useState<Testimonial[]>(defaultTestimonials);
 
   useEffect(() => {
     const supabase = createClient();
@@ -109,7 +124,33 @@ export default function LandingPage() {
       setLoading(false);
     };
 
+    const fetchTestimonials = async () => {
+      const { data: ratings } = await supabase
+        .from("ratings")
+        .select("display_name, feedback, rating")
+        .eq("show_on_landing", true)
+        .eq("approved", true)
+        .gte("rating", 4) // Only show 4 and 5 star ratings
+        .order("created_at", { ascending: false });
+
+      if (ratings && ratings.length > 0) {
+        const userTestimonials: Testimonial[] = ratings.map((r) => ({
+          name: r.display_name || "Anonymous User",
+          role: "Student", // Could be enhanced to show actual role
+          body: r.feedback,
+          rating: r.rating,
+          avatar: `https://avatar.vercel.sh/${r.display_name
+            ?.toLowerCase()
+            .replace(/\s+/g, "")}`,
+        }));
+
+        // Mix user testimonials with default ones
+        setTestimonials([...userTestimonials, ...defaultTestimonials]);
+      }
+    };
+
     checkUser();
+    fetchTestimonials();
 
     const {
       data: { subscription },
@@ -119,6 +160,9 @@ export default function LandingPage() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const firstRow = testimonials.slice(0, Math.ceil(testimonials.length / 2));
+  const secondRow = testimonials.slice(Math.ceil(testimonials.length / 2));
 
   if (loading) {
     return (
