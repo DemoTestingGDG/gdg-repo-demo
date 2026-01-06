@@ -34,9 +34,9 @@ export async function updateProfile(formData: FormData) {
     const studentNumber = formData.get("studentNumber") as string;
     profileData.student_number = studentNumber;
 
-    // Update Student table
+    // Update student table (lowercase)
     const { error: studentError } = await supabase
-      .from("Student")
+      .from("student")
       .update({
         student_number: studentNumber,
         first_name: firstName,
@@ -60,9 +60,9 @@ export async function updateProfile(formData: FormData) {
     profileData.department = department || null;
     profileData.employment_date = employmentDate;
 
-    // Update SecurityPersonnel table
+    // Update securitypersonnel table (lowercase)
     const { error: securityError } = await supabase
-      .from("SecurityPersonnel")
+      .from("securitypersonnel")
       .update({
         employee_id: employeeId,
         first_name: firstName,

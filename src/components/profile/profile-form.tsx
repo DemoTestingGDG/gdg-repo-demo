@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { updateProfile } from "@/app/profile/actions";
+import { updateProfile } from "@/app/profile/edit/actions";
 import { toast } from "sonner";
+import { Pencil } from "lucide-react";
 
 interface ProfileFormProps {
   profile: {
@@ -26,19 +24,17 @@ interface ProfileFormProps {
 export function ProfileForm({ profile, email }: ProfileFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>("");
+  const [isEditing, setIsEditing] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     const formData = new FormData(e.currentTarget);
 
     try {
       const result = await updateProfile(formData);
       if (result.error) {
-        setError(result.error);
         toast.error("Error", {
           description: result.error,
         });
@@ -46,13 +42,12 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
         toast.success("Success!", {
           description: "Your profile has been updated successfully.",
         });
+        router.push("/profile");
         router.refresh();
       }
     } catch (err) {
-      const errorMessage = "An unexpected error occurred";
-      setError(errorMessage);
       toast.error("Error", {
-        description: errorMessage,
+        description: "An unexpected error occurred",
       });
     } finally {
       setLoading(false);
@@ -60,155 +55,227 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="userId" value={profile.id} />
       <input type="hidden" name="userType" value={profile.user_type} />
 
-      {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-800">
-          {error}
+      {/* Full Name */}
+      <div className="rounded-lg bg-white p-4 shadow-sm">
+        <div className="mb-1 flex items-center justify-between">
+          <label className="text-sm font-medium text-gray-600">Full Name</label>
+          <button
+            type="button"
+            onClick={() => setIsEditing(isEditing === "name" ? null : "name")}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
         </div>
-      )}
-
-      {/* Email (read-only) */}
-      <div>
-        <Label htmlFor="email">Email Address</Label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          disabled
-          className="mt-1 bg-gray-50"
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          Email cannot be changed. Contact support if needed.
-        </p>
+        {isEditing === "name" ? (
+          <div className="flex gap-2">
+            <input
+              name="firstName"
+              type="text"
+              required
+              defaultValue={profile.first_name}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              placeholder="First Name"
+            />
+            <input
+              name="lastName"
+              type="text"
+              required
+              defaultValue={profile.last_name}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              placeholder="Last Name"
+            />
+          </div>
+        ) : (
+          <div className="text-gray-900">
+            <input type="hidden" name="firstName" value={profile.first_name} />
+            <input type="hidden" name="lastName" value={profile.last_name} />
+            {profile.first_name} {profile.last_name}
+          </div>
+        )}
       </div>
 
-      {/* User Type (read-only) */}
-      <div>
-        <Label htmlFor="userType">Account Type</Label>
-        <Input
-          id="userType"
-          type="text"
-          value={
-            profile.user_type === "student" ? "Student" : "Security Personnel"
-          }
-          disabled
-          className="mt-1 bg-gray-50"
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          Account type cannot be changed.
-        </p>
-      </div>
-
-      {/* Common Fields */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="firstName">First Name *</Label>
-          <Input
-            id="firstName"
-            name="firstName"
-            type="text"
-            required
-            defaultValue={profile.first_name}
-            className="mt-1"
-            placeholder="Juan"
-          />
+      {/* Email */}
+      <div className="rounded-lg bg-white p-4 shadow-sm">
+        <div className="mb-1 flex items-center justify-between">
+          <label className="text-sm font-medium text-gray-600">Email</label>
+          <Pencil className="h-4 w-4 text-gray-300" />
         </div>
-        <div>
-          <Label htmlFor="lastName">Last Name *</Label>
-          <Input
-            id="lastName"
-            name="lastName"
-            type="text"
-            required
-            defaultValue={profile.last_name}
-            className="mt-1"
-            placeholder="Dela Cruz"
-          />
-        </div>
+        <div className="text-gray-400">{email}</div>
+        <p className="mt-1 text-xs text-gray-400">Email cannot be changed</p>
       </div>
 
-      <div>
-        <Label htmlFor="phone">Phone Number</Label>
-        <Input
-          id="phone"
-          name="phone"
-          type="tel"
-          defaultValue={profile.phone || ""}
-          className="mt-1"
-          placeholder="+639123456789"
-        />
-      </div>
-
-      {/* Student-specific fields */}
+      {/* Student Number (if student) */}
       {profile.user_type === "student" && (
-        <div>
-          <Label htmlFor="studentNumber">Student Number *</Label>
-          <Input
-            id="studentNumber"
-            name="studentNumber"
-            type="text"
-            required
-            defaultValue={profile.student_number || ""}
-            className="mt-1"
-            placeholder="2021-12345-MN-0"
-          />
+        <div className="rounded-lg bg-white p-4 shadow-sm">
+          <div className="mb-1 flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-600">
+              Student Number
+            </label>
+            <button
+              type="button"
+              onClick={() =>
+                setIsEditing(isEditing === "student" ? null : "student")
+              }
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          </div>
+          {isEditing === "student" ? (
+            <input
+              name="studentNumber"
+              type="text"
+              required
+              defaultValue={profile.student_number || ""}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              placeholder="1234-56789-MN-0"
+            />
+          ) : (
+            <div className="text-gray-900">
+              <input
+                type="hidden"
+                name="studentNumber"
+                value={profile.student_number || ""}
+              />
+              {profile.student_number || "Not set"}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Security-specific fields */}
+      {/* Employee ID (if security) */}
       {profile.user_type === "security" && (
         <>
-          <div>
-            <Label htmlFor="employeeId">Employee ID *</Label>
-            <Input
-              id="employeeId"
-              name="employeeId"
-              type="text"
-              required
-              defaultValue={profile.employee_id || ""}
-              className="mt-1"
-              placeholder="SEC001"
-            />
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-600">
+                Employee ID
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  setIsEditing(isEditing === "employee" ? null : "employee")
+                }
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            </div>
+            {isEditing === "employee" ? (
+              <input
+                name="employeeId"
+                type="text"
+                required
+                defaultValue={profile.employee_id || ""}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                placeholder="SEC001"
+              />
+            ) : (
+              <div className="text-gray-900">
+                <input
+                  type="hidden"
+                  name="employeeId"
+                  value={profile.employee_id || ""}
+                />
+                {profile.employee_id || "Not set"}
+              </div>
+            )}
           </div>
-          <div>
-            <Label htmlFor="department">Department</Label>
-            <Input
-              id="department"
-              name="department"
-              type="text"
-              defaultValue={profile.department || ""}
-              className="mt-1"
-              placeholder="Campus Security"
-            />
+
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-600">
+                Department
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  setIsEditing(isEditing === "department" ? null : "department")
+                }
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            </div>
+            {isEditing === "department" ? (
+              <input
+                name="department"
+                type="text"
+                defaultValue={profile.department || ""}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                placeholder="Campus Security"
+              />
+            ) : (
+              <div className="text-gray-900">
+                <input
+                  type="hidden"
+                  name="department"
+                  value={profile.department || ""}
+                />
+                {profile.department || "Not set"}
+              </div>
+            )}
           </div>
-          <div>
-            <Label htmlFor="employmentDate">Employment Date *</Label>
-            <Input
-              id="employmentDate"
-              name="employmentDate"
-              type="date"
-              required
-              defaultValue={profile.employment_date || ""}
-              className="mt-1"
-            />
-          </div>
+
+          <input
+            type="hidden"
+            name="employmentDate"
+            value={profile.employment_date || ""}
+          />
         </>
       )}
 
+      {/* Phone Number */}
+      <div className="rounded-lg bg-white p-4 shadow-sm">
+        <div className="mb-1 flex items-center justify-between">
+          <label className="text-sm font-medium text-gray-600">
+            Phone Number
+          </label>
+          <button
+            type="button"
+            onClick={() => setIsEditing(isEditing === "phone" ? null : "phone")}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+        </div>
+        {isEditing === "phone" ? (
+          <input
+            name="phone"
+            type="tel"
+            defaultValue={profile.phone || ""}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+            placeholder="09123456789"
+          />
+        ) : (
+          <div className="text-gray-900">
+            <input type="hidden" name="phone" value={profile.phone || ""} />
+            {profile.phone || "Not set"}
+          </div>
+        )}
+      </div>
+
+      {/* Action Buttons */}
       <div className="flex gap-4 pt-4">
-        <Button type="submit" disabled={loading} className="flex-1">
-          {loading ? "Saving..." : "Save Changes"}
-        </Button>
-        <Button
+        <button
           type="button"
-          variant="outline"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push("/profile")}
+          className="flex-1 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
-          Cancel
-        </Button>
+          Discard
+        </button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex-1 rounded-lg bg-fetch-red px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+        >
+          {loading ? "Saving..." : "Save"}
+        </button>
       </div>
     </form>
   );
