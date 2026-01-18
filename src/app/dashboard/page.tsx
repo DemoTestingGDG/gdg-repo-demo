@@ -1,53 +1,90 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCachedUserData } from "@/utils/supabase/cached-queries";
 import { redirect } from "next/navigation";
-import { signOut } from "../(auth)/actions";
+import { logout } from "../(auth)/actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CheckCircle2, LogOut, User } from "lucide-react";
+import { StudentHome } from "@/components/home/student/student-home";
+import { SecurityHome } from "@/components/home/security/security-home";
+import { AdminHome } from "@/components/home/admin-home";
+import Link from "next/link";
+import { ToastHandler } from "./toast-handler";
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+const getUserTypeLabel = (type: string) => {
+  switch (type) {
+    case "student":
+      return "Student";
+    case "security":
+      return "Security Personnel";
+    case "admin":
+      return "Administrator";
+    default:
+      return type;
+  }
+};
 
-  if (!user) {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    message?: string;
+    success?: string;
+    confirmed?: string;
+  }>;
+}) {
+  const { user, profile, error } = await getCachedUserData();
+
+  if (error || !user || !profile) {
     redirect("/login");
   }
 
+  if (!profile.onboarding_completed) {
+    redirect("/onboarding");
+  }
+
+  const params = await searchParams;
+  const message = params.message;
+  const success = params.success;
+  const confirmed = params.confirmed;
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 justify-between">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold">Dashboard</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-700">{user.email}</span>
-              <form action={signOut}>
-                <button
-                  type="submit"
-                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                >
-                  Sign out
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </nav>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="text-2xl font-bold text-gray-900">Welcome back!</h2>
-          <p className="mt-2 text-gray-600">You're successfully logged in.</p>
-          <div className="mt-4 rounded-md bg-blue-50 p-4">
-            <p className="text-sm text-blue-700">
-              <strong>Email:</strong> {user.email}
-            </p>
-            <p className="text-sm text-blue-700">
-              <strong>User ID:</strong> {user.id}
-            </p>
-          </div>
-        </div>
-      </main>
-    </div>
+    <>
+      <ToastHandler success={success} confirmed={confirmed} message={message} />
+      <div className="min-h-screen bg-gray-50">
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          {message && (
+            <Alert className="mb-6 border-green-500 bg-green-50">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">Success</AlertTitle>
+              <AlertDescription className="text-green-700">
+                {message}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {profile.user_type === "student" && (
+            <StudentHome
+              studentId={profile.studentId || 0}
+              firstName={profile.first_name}
+              email={user.email || ""}
+              avatarUrl={profile.avatar_url}
+            />
+          )}
+          {profile.user_type === "security" && (
+            <SecurityHome
+              securityId={profile.securityId || 0}
+              firstName={profile.first_name}
+              email={user.email || ""}
+              avatarUrl={profile.avatar_url}
+            />
+          )}
+          {profile.user_type === "admin" && (
+            <AdminHome
+              firstName={profile.first_name}
+              email={user.email || ""}
+            />
+          )}
+        </main>
+      </div>
+    </>
   );
 }
