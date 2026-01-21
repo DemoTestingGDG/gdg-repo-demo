@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { StudentLayout } from "@/components/layouts/student-layout";
 import { ReportLostModal } from "@/components/modals/report-lost-modal";
+import { EditLostModal } from "@/components/modals/edit-lost-modal";
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,10 +32,14 @@ import {
   XCircle,
   RotateCcw,
   Eye,
+  Pencil,
+  Trash,
+  ClipboardList,
 } from "lucide-react";
 import {
   cancelLostReport,
   reactivateLostReport,
+  deleteLostReport,
 } from "@/app/dashboard/reports/actions";
 import { StatsSkeleton } from "@/components/skeletons/stats-skeleton";
 import { ReportListSkeleton } from "@/components/skeletons/report-card-skeleton";
@@ -57,6 +62,7 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
   const [closedReports, setClosedReports] = useState<ReportWithMatches[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<LostItemReport | null>(null);
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     searchQuery: "",
     category: "",
@@ -70,6 +76,10 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
     reportId: number | null;
   }>({ open: false, reportId: null });
   const [reactivateDialog, setReactivateDialog] = useState<{
+    open: boolean;
+    reportId: number | null;
+  }>({ open: false, reportId: null });
+  const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     reportId: number | null;
   }>({ open: false, reportId: null });
@@ -177,6 +187,21 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
     setReactivateDialog({ open: false, reportId: null });
   };
 
+  const handleDeleteReport = async () => {
+    if (!deleteDialog.reportId) return;
+
+    const result = await deleteLostReport(deleteDialog.reportId);
+
+    if (result.success) {
+      toast.success("Report deleted successfully");
+      fetchReports();
+    } else {
+      toast.error(result.error || "Failed to delete report");
+    }
+
+    setDeleteDialog({ open: false, reportId: null });
+  };
+
   if (loading) {
     return (
       <StudentLayout 
@@ -219,7 +244,7 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm" className="p-2">
@@ -227,7 +252,10 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
                 </Button>
               </Link>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">My Reports</h1>
+                <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-fetch-red" />
+                  My Reports
+                </h1>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Track and manage your lost item reports
                 </p>
@@ -293,8 +321,8 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
           <TabsContent value="active" className="space-y-4 mt-6">
             {filteredActiveReports.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <AlertCircle className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-fetch-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8 text-fetch-red" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {activeReports.length === 0 ? "No active reports" : "No matching results"}
@@ -316,6 +344,7 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
                       reportId: report.report_id,
                     })
                   }
+                  onEdit={() => setEditingReport(report)}
                 />
               ))
             )}
@@ -324,8 +353,8 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
           <TabsContent value="closed" className="space-y-4 mt-6">
             {filteredClosedReports.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-fetch-yellow/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-fetch-yellow" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {closedReports.length === 0 ? "No closed reports" : "No matching results"}
@@ -343,6 +372,12 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
                   report={report}
                   onReactivate={() =>
                     setReactivateDialog({
+                      open: true,
+                      reportId: report.report_id,
+                    })
+                  }
+                  onDelete={() =>
+                    setDeleteDialog({
                       open: true,
                       reportId: report.report_id,
                     })
@@ -408,6 +443,42 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) =>
+          setDeleteDialog({ open, reportId: deleteDialog.reportId })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this report and all associated matches. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteReport}
+              className="bg-fetch-red hover:bg-fetch-red/90"
+            >
+              Delete Report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Lost Modal */}
+      {editingReport && (
+        <EditLostModal
+          report={editingReport}
+          studentId={studentId}
+          onClose={() => setEditingReport(null)}
+          onSuccess={fetchReports}
+        />
+      )}
+
       {/* Report Lost Modal */}
       {isModalOpen && (
         <ReportLostModal
@@ -423,9 +494,11 @@ interface ReportCardProps {
   report: ReportWithMatches;
   onCancel?: () => void;
   onReactivate?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-function ReportCard({ report, onCancel, onReactivate }: ReportCardProps) {
+function ReportCard({ report, onCancel, onReactivate, onEdit, onDelete }: ReportCardProps) {
   const reportedDate = new Date(report.reported_at).toLocaleDateString(
     "en-US",
     {
@@ -532,6 +605,15 @@ function ReportCard({ report, onCancel, onReactivate }: ReportCardProps) {
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={onEdit}
+                    className="text-gray-600"
+                  >
+                    <Pencil className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={onCancel}
                     className="text-gray-600"
                   >
@@ -540,15 +622,26 @@ function ReportCard({ report, onCancel, onReactivate }: ReportCardProps) {
                   </Button>
                 </>
               ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={onReactivate}
-                  className="text-fetch-red border-fetch-red hover:bg-fetch-red/10"
-                >
-                  <RotateCcw className="w-4 h-4 mr-1" />
-                  Reactivate
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onReactivate}
+                    className="text-fetch-red border-fetch-red hover:bg-fetch-red/10"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-1" />
+                    Reactivate
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onDelete}
+                    className="text-fetch-red border-fetch-red hover:bg-fetch-red/10"
+                  >
+                    <Trash className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </>
               )}
             </div>
           </div>
