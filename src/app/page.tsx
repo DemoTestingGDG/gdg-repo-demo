@@ -197,7 +197,7 @@ export default function LandingPage() {
         </p>
 
         <p className="text-xl text-muted-foreground mb-14 max-w-2xl">
-          A modern lost and found system for campus communities
+          An old lost and found system for campus communities
         </p>
 
         <div className="flex gap-4">
